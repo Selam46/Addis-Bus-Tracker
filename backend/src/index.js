@@ -5,6 +5,9 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 require("dotenv").config();
 
+// --- Route Imports ---
+const authRoutes = require("./routes/auth");
+
 // --- App Setup ---
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +27,16 @@ app.get("/", (req, res) => {
     version: "1.0.0",
   });
 });
+
+// ============================================
+// API Routes
+// ============================================
+app.use("/api/auth", authRoutes);
+// app.use("/api/routes",  routeRoutes);   — Section 6
+// app.use("/api/stops",   stopRoutes);    — Section 6
+// app.use("/api/schedules", scheduleRoutes); — Section 7
+// app.use("/api/buses",   busRoutes);     — Section 8
+// app.use("/api/feedback", feedbackRoutes); — Section 9
 
 // --- 404 Handler ---
 app.use((req, res) => {
