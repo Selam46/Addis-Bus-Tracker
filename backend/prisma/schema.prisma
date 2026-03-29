@@ -1,0 +1,237 @@
+// ============================================
+// Addis Ababa Bus Tracker — Database Schema
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// USERS — Passengers who use the app
+// ─────────────────────────────────────────────
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  phone         String?  @unique
+  passwordHash  String
+  pushToken     String?  // For push notifications (Expo token)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  feedback      Feedback[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// ROUTES — Bus lines (e.g. Route 45, Route 12)
+// ─────────────────────────────────────────────
+model Route {
+  id          String   @id @default(uuid())
+  routeNumber String   @unique  // e.g. "45", "12A"
+  name        String            // e.g. "Merkato to Bole"
+  description String?
+  color       String?           // Hex color for map display e.g. "#FF5733"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  routeStops  RouteStop[]
+  buses       Bus[]
+  schedules   Schedule[]
+  trips       Trip[]
+  feedback    Feedback[]
+
+  @@map("routes")
+}
+
+// ─────────────────────────────────────────────
+// STOPS — Individual bus stops around the city
+// ─────────────────────────────────────────────
+model Stop {
+  id          String   @id @default(uuid())
+  name        String            // English name e.g. "Merkato"
+  nameAm      String?           // Amharic name e.g. "መርካቶ"
+  latitude    Float             // GPS latitude
+  longitude   Float             // GPS longitude
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  routeStops  RouteStop[]
+
+  @@map("stops")
+}
+
+// ─────────────────────────────────────────────
+// ROUTE_STOPS — Which stops belong to which route and in what order
+// ─────────────────────────────────────────────
+model RouteStop {
+  id                String @id @default(uuid())
+  routeId           String
+  stopId            String
+  stopOrder         Int           // Position in the route (1, 2, 3...)
+  distanceFromStart Float?        // Distance in KM from the first stop
+
+  // Relations
+  route  Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop   Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, stopOrder])
+  @@unique([routeId, stopId])
+  @@map("route_stops")
+}
+
+// ─────────────────────────────────────────────
+// BUSES — Physical buses operating in the city
+// ─────────────────────────────────────────────
+model Bus {
+  id           String   @id @default(uuid())
+  busNumber    String   @unique  // e.g. "AA-001"
+  licensePlate String   @unique
+  capacity     Int      @default(60)
+  routeId      String?           // Currently assigned route
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  route        Route?         @relation(fields: [routeId], references: [id])
+  locations    BusLocation[]
+  trips        Trip[]
+
+  @@map("buses")
+}
+
+// ─────────────────────────────────────────────
+// BUS_LOCATIONS — Real-time GPS location of each bus
+// ─────────────────────────────────────────────
+model BusLocation {
+  id        String   @id @default(uuid())
+  busId     String
+  latitude  Float
+  longitude Float
+  speed     Float?   // Speed in KM/H
+  heading   Float?   // Direction in degrees (0-360)
+  timestamp DateTime @default(now())
+
+  // Relations
+  bus Bus @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@map("bus_locations")
+}
+
+// ─────────────────────────────────────────────
+// SCHEDULES — When buses run on a route
+// ─────────────────────────────────────────────
+model Schedule {
+  id            String   @id @default(uuid())
+  routeId       String
+  departureTime String   // e.g. "06:00", "06:30" (24hr format)
+  daysOfWeek    String[] // e.g. ["MON", "TUE", "WED", "THU", "FRI"]
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  route  Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  trips  Trip[]
+
+  @@map("schedules")
+}
+
+// ─────────────────────────────────────────────
+// TRIPS — A bus actively running a route
+// ─────────────────────────────────────────────
+model Trip {
+  id          String     @id @default(uuid())
+  busId       String
+  routeId     String
+  scheduleId  String?
+  status      TripStatus @default(SCHEDULED)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  bus      Bus       @relation(fields: [busId], references: [id])
+  route    Route     @relation(fields: [routeId], references: [id])
+  schedule Schedule? @relation(fields: [scheduleId], references: [id])
+
+  @@map("trips")
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// FEEDBACK — Passenger complaints and feedback
+// ─────────────────────────────────────────────
+model Feedback {
+  id        String         @id @default(uuid())
+  userId    String
+  routeId   String?
+  category  FeedbackCategory
+  message   String
+  status    FeedbackStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route Route? @relation(fields: [routeId], references: [id])
+
+  @@map("feedback")
+}
+
+enum FeedbackCategory {
+  OVERCROWDING
+  LATE_ARRIVAL
+  RUDE_DRIVER
+  VEHICLE_CONDITION
+  WRONG_ROUTE
+  OTHER
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS — In-app notification records
+// ─────────────────────────────────────────────
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  BUS_APPROACHING
+  SCHEDULE_CHANGE
+  SYSTEM
+}
