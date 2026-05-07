@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚌 Addis Bus Tracker — Socket.io Test</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 24px;
+    }
+    h1 { color: #38bdf8; margin-bottom: 4px; }
+    .subtitle { color: #64748b; margin-bottom: 24px; font-size: 14px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 14px; color: #94a3b8; text-transform: uppercase;
+               letter-spacing: 1px; margin-bottom: 12px; }
+
+    .status {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px; font-size: 13px;
+      font-weight: 600; margin-bottom: 16px;
+    }
+    .status.connected    { background: #14532d; color: #4ade80; }
+    .status.disconnected { background: #450a0a; color: #f87171; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    input {
+      width: 100%; padding: 10px 12px; background: #0f172a;
+      border: 1px solid #334155; border-radius: 8px; color: #e2e8f0;
+      font-size: 13px; margin-bottom: 8px;
+    }
+    input::placeholder { color: #475569; }
+    input:focus { outline: none; border-color: #38bdf8; }
+
+    button {
+      padding: 10px 18px; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      margin-right: 8px; margin-bottom: 8px; transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-blue  { background: #0284c7; color: white; }
+    .btn-gray  { background: #334155; color: #cbd5e1; }
+    .btn-green { background: #15803d; color: white; }
+    .btn-red   { background: #b91c1c; color: white; }
+
+    #log {
+      background: #020617; border: 1px solid #1e293b; border-radius: 8px;
+      padding: 12px; height: 340px; overflow-y: auto;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      line-height: 1.7;
+    }
+    .log-connected    { color: #4ade80; }
+    .log-subscribed   { color: #38bdf8; }
+    .log-unsubscribed { color: #94a3b8; }
+    .log-update       { color: #fbbf24; }
+    .log-error        { color: #f87171; }
+    .log-time         { color: #475569; margin-right: 8px; }
+
+    .socket-id { font-size: 11px; color: #475569; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <h1>🚌 Addis Bus Tracker</h1>
+  <p class="subtitle">Socket.io Real-time Test Console</p>
+
+  <div id="connectionStatus" class="status disconnected">
+    <span class="dot"></span>
+    <span id="statusText">Disconnected</span>
+  </div>
+  <p class="socket-id">Socket ID: <span id="socketId">—</span></p>
+
+  <br />
+
+  <div class="grid">
+
+    <!-- Left Column: Controls -->
+    <div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h2>Subscribe to Route</h2>
+        <input id="routeIdInput" type="text" placeholder="Paste a routeId (UUID) here" />
+        <button class="btn-green" onclick="subscribeRoute()">📡 Subscribe</button>
+        <button class="btn-gray" onclick="unsubscribeRoute()">📴 Unsubscribe</button>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h2>Subscribe to Bus</h2>
+        <input id="busIdInput" type="text" placeholder="Paste a busId (UUID) here" />
+        <button class="btn-green" onclick="subscribeBus()">📡 Subscribe</button>
+        <button class="btn-gray" onclick="unsubscribeBus()">📴 Unsubscribe</button>
+      </div>
+
+      <div class="card">
+        <h2>Connection</h2>
+        <button class="btn-blue" onclick="socket.connect()">🔌 Connect</button>
+        <button class="btn-red" onclick="socket.disconnect()">⛔ Disconnect</button>
+        <button class="btn-gray" onclick="clearLog()">🗑 Clear Log</button>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Event Log -->
+    <div class="card">
+      <h2>Live Event Log</h2>
+      <div id="log"><span style="color:#475569">Waiting for events...</span></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Connect to the local server ─────────────────────────
+    const socket = io("http://localhost:5000", { autoConnect: true });
+
+    const log = document.getElementById("log");
+    const statusEl = document.getElementById("connectionStatus");
+    const statusText = document.getElementById("statusText");
+    const socketIdEl = document.getElementById("socketId");
+
+    function addLog(message, type = "log-update") {
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement("div");
+      line.innerHTML = `<span class="log-time">[${time}]</span><span class="${type}">${message}</span>`;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() {
+      log.innerHTML = '<span style="color:#475569">Log cleared.</span>';
+    }
+
+    // ── Connection events ────────────────────────────────────
+    socket.on("connect", () => {
+      statusEl.className = "status connected";
+      statusText.textContent = "Connected";
+      socketIdEl.textContent = socket.id;
+      addLog("✅ Connected to server", "log-connected");
+    });
+
+    socket.on("disconnect", (reason) => {
+      statusEl.className = "status disconnected";
+      statusText.textContent = "Disconnected";
+      socketIdEl.textContent = "—";
+      addLog(`⛔ Disconnected: ${reason}`, "log-error");
+    });
+
+    // ── Server confirmation events ───────────────────────────
+    socket.on("connected", (data) => {
+      addLog(`🚌 Server says: ${data.message}`, "log-connected");
+    });
+
+    socket.on("subscribed", (data) => {
+      addLog(`📡 Subscribed to ${data.type}: ${data.room}`, "log-subscribed");
+    });
+
+    socket.on("unsubscribed", (data) => {
+      addLog(`📴 Unsubscribed from ${data.type} room`, "log-unsubscribed");
+    });
+
+    // ── THE MAIN EVENT: Bus location update ──────────────────
+    socket.on("bus:locationUpdate", (data) => {
+      addLog(
+        `🚌 Bus ${data.busNumber} → lat: ${data.latitude}, lng: ${data.longitude}` +
+        (data.speed ? `, speed: ${data.speed} km/h` : "") +
+        (data.heading ? `, heading: ${data.heading}°` : ""),
+        "log-update"
+      );
+      addLog(`   ⏱ ${new Date(data.timestamp).toLocaleTimeString()}`, "log-update");
+    });
+
+    socket.on("error:socket", (data) => {
+      addLog(`❌ Error: ${data.message}`, "log-error");
+    });
+
+    // ── Button actions ───────────────────────────────────────
+    function subscribeRoute() {
+      const id = document.getElementById("routeIdInput").value.trim();
+      if (!id) { addLog("⚠️ Please enter a routeId", "log-error"); return; }
+      socket.emit("subscribe:route", id);
+    }
+
+    function unsubscribeRoute() {
+      const id = document.getElementById("routeIdInput").value.trim();
+      if (!id) { addLog("⚠️ Please enter a routeId", "log-error"); return; }
+      socket.emit("unsubscribe:route", id);
+    }
+
+    function subscribeBus() {
+      const id = document.getElementById("busIdInput").value.trim();
+      if (!id) { addLog("⚠️ Please enter a busId", "log-error"); return; }
+      socket.emit("subscribe:bus", id);
+    }
+
+    function unsubscribeBus() {
+      const id = document.getElementById("busIdInput").value.trim();
+      if (!id) { addLog("⚠️ Please enter a busId", "log-error"); return; }
+      socket.emit("unsubscribe:bus", id);
+    }
+  </script>
+
+</body>
+</html>
