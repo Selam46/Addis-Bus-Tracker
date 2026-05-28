@@ -13,6 +13,7 @@ const stopRoutes = require("./routes/stops");
 const scheduleRoutes = require("./routes/schedules");
 const busRoutes = require("./routes/buses");
 const feedbackRoutes = require("./routes/feedback");
+const notificationRoutes = require("./routes/notifications");
 
 // --- Socket.io Handler ---
 const { initializeSocket } = require("./socket");
@@ -71,6 +72,7 @@ app.use("/api/stops", stopRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/buses", busRoutes); // ✅ Section 8
 app.use("/api/feedback", feedbackRoutes); // ✅ Section 9
+app.use("/api/notifications", notificationRoutes); // ✅ Gap 3
 
 // ============================================
 // 404 Handler

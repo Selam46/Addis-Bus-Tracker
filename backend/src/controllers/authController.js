@@ -15,11 +15,9 @@ const prisma = require("../lib/prisma");
 // HELPER: Generate a signed JWT token
 // ─────────────────────────────────────────────
 const generateToken = (userId) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
-  );
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  });
 };
 
 // ─────────────────────────────────────────────
@@ -59,7 +57,7 @@ const registerValidation = [
     .trim()
     .matches(/^\+?[0-9]{9,15}$/)
     .withMessage(
-      "Phone number must be 9–15 digits and may start with +. Example: +251911234567"
+      "Phone number must be 9–15 digits and may start with +. Example: +251911234567",
     ),
 
   body("password")
@@ -67,6 +65,37 @@ const registerValidation = [
     .withMessage("Password is required.")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long."),
+];
+
+// ─────────────────────────────────────────────
+// VALIDATION RULES — Update Push Token
+// ─────────────────────────────────────────────
+const pushTokenValidation = [
+  body("pushToken")
+    .trim()
+    .notEmpty()
+    .withMessage("pushToken is required.")
+    .isString()
+    .withMessage("pushToken must be a string."),
+];
+
+// ─────────────────────────────────────────────
+// VALIDATION RULES — Update Profile
+// ─────────────────────────────────────────────
+const updateProfileValidation = [
+  body("name")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Name must be between 2 and 100 characters."),
+
+  body("phone")
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^\+?[0-9]{9,15}$/)
+    .withMessage(
+      "Phone number must be 9–15 digits and may start with +. Example: +251911234567",
+    ),
 ];
 
 // ─────────────────────────────────────────────
@@ -81,9 +110,7 @@ const loginValidation = [
     .withMessage("Please provide a valid email address.")
     .normalizeEmail(),
 
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required."),
+  body("password").notEmpty().withMessage("Password is required."),
 ];
 
 // ─────────────────────────────────────────────
@@ -217,12 +244,131 @@ const getMe = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────
+// PUT /api/auth/push-token  (protected)
+// ─────────────────────────────────────────────
+// Saves the device's Expo push token to the user's record.
+// Called by the mobile app on startup, right after login.
+// Without this, the server cannot send push notifications
+// to the user's device when a bus is approaching.
+//
+// Body: { pushToken: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" }
+const updatePushToken = async (req, res, next) => {
+  try {
+    const { pushToken } = req.body;
+    const userId = req.user.id;
+
+    // ── Save the token to the database ────────────────────
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { pushToken },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        pushToken: true,
+        createdAt: true,
+      },
+    });
+
+    console.log(`📲 Push token saved for user ${updatedUser.email}`);
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Push token saved successfully. You will now receive notifications. 🔔",
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────
+// PUT /api/auth/profile  (protected)
+// ─────────────────────────────────────────────
+// Lets a passenger update their name and/or phone number.
+// At least one of the two fields must be provided.
+// The user's email cannot be changed here.
+//
+// Body: { name?, phone? }
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+    const userId = req.user.id;
+
+    // ── Require at least one field to update ──────────────
+    if (!name && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide at least one field to update: name or phone.",
+      });
+    }
+
+    // ── If phone is being changed, check it isn't taken ───
+    // We exclude the current user from the uniqueness check
+    // so they can re-submit their own phone without an error.
+    if (phone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: {
+          phone,
+          NOT: { id: userId },
+        },
+      });
+
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: "This phone number is already linked to another account.",
+        });
+      }
+    }
+
+    // ── Build the update payload with only provided fields ─
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (phone) updateData.phone = phone.trim();
+
+    // ── Apply the update ──────────────────────────────────
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        pushToken: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully. ✅",
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────
 module.exports = {
   registerValidation,
   loginValidation,
+  pushTokenValidation,
+  updateProfileValidation,
   register,
   login,
   getMe,
+  updatePushToken,
+  updateProfile,
 };
