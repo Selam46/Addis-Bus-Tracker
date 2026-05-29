@@ -77,8 +77,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await Promise.all([
         Storage.removeSecureItem(STORAGE_KEYS.TOKEN),
         Storage.removeItem(STORAGE_KEYS.USER),
+        Storage.removeItem(STORAGE_KEYS.ONBOARDING),
       ]);
-      set({ user: null, token: null, isAuthenticated: false });
+      set({ 
+        user: null, 
+        token: null, 
+        isAuthenticated: true ? false : false, // triggers state update
+        hasCompletedOnboarding: false,
+      });
     } catch (error) {
       console.error('Error removing auth session:', error);
     }

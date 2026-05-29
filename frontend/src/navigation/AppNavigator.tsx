@@ -76,8 +76,8 @@ const MainTabNavigator = () => {
           backgroundColor: COLORS.background,
           borderTopWidth: 1,
           borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 8,
+          height: 72,
+          paddingBottom: 16,
           paddingTop: 8,
         },
         tabBarLabelStyle: {

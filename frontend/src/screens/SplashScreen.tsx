@@ -1,36 +1,98 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { COLORS } from '../theme/theme';
 import Text from '../components/ui/Text';
 
 export const SplashScreen: React.FC = () => {
-  const { initialize, isAuthenticated, hasCompletedOnboarding } = useAuthStore();
+  const { initialize } = useAuthStore();
+
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.3)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(30)).current;
+  const loaderOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Simulate a brief delay to show the beautiful splash loader
-    const timer = setTimeout(() => {
-      initialize();
-    }, 1500);
+    // Start sequence of entry animations
+    Animated.sequence([
+      // First, fade in and scale the logo
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(logoScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Then, slide up and fade in the text
+      Animated.parallel([
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textTranslateY, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Finally, fade in the loading spinner
+      Animated.timing(loaderOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    return () => clearTimeout(timer);
-  }, []);
+    // Call initialize in the background, but ensure the splash is visible for at least 2.5 seconds for a premium feel
+    const initTimer = setTimeout(async () => {
+      await initialize();
+    }, 2500);
+
+    return () => clearTimeout(initTimer);
+  }, [initialize]);
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        {/* We can use a standard Vector Icon or placeholder for the bus icon */}
-        <View style={styles.iconCircle}>
+        <Animated.View 
+          style={[
+            styles.iconCircle, 
+            { 
+              opacity: logoOpacity, 
+              transform: [{ scale: logoScale }] 
+            }
+          ]}
+        >
           <Text style={styles.logoIcon}>🚌</Text>
-        </View>
-        <Text variant="h1" style={styles.title}>
-          Addis Bus
-        </Text>
-        <Text variant="body" style={styles.subtitle}>
-          Track. Ride. Arrive.
-        </Text>
+        </Animated.View>
+        
+        <Animated.View 
+          style={{ 
+            opacity: textOpacity, 
+            transform: [{ translateY: textTranslateY }], 
+            alignItems: 'center' 
+          }}
+        >
+          <Text variant="h1" style={styles.title}>
+            Addis Bus
+          </Text>
+          <Text variant="body" style={styles.subtitle}>
+            Track. Ride. Arrive.
+          </Text>
+        </Animated.View>
       </View>
-      <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+      
+      <Animated.View style={[styles.loaderContainer, { opacity: loaderOpacity }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </Animated.View>
     </View>
   );
 };
@@ -49,16 +111,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   logoIcon: {
-    fontSize: 48,
+    fontSize: 52,
   },
   title: {
     color: COLORS.primary,
@@ -69,9 +136,11 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     letterSpacing: 1,
   },
-  loader: {
-    marginBottom: 20,
+  loaderContainer: {
+    height: 50,
+    justifyContent: 'center',
   },
 });
 
 export default SplashScreen;
+

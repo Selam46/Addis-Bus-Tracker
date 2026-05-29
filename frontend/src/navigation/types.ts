@@ -13,7 +13,11 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
+  Home: {
+    latitude?: number;
+    longitude?: number;
+    selectedStopId?: string;
+  } | undefined;
   Routes: undefined;
   Notifications: undefined;
   Profile: undefined;
