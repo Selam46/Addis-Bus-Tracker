@@ -15,6 +15,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import RoutesScreen from '../screens/RoutesScreen';
+import SchedulesScreen from '../screens/SchedulesScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
@@ -59,6 +60,7 @@ const MainTabNavigator = () => {
           let emoji = '❓';
           if (route.name === 'Home') emoji = '🗺️';
           else if (route.name === 'Routes') emoji = '🚍';
+          else if (route.name === 'Schedules') emoji = '📅';
           else if (route.name === 'Notifications') emoji = '🔔';
           else if (route.name === 'Profile') emoji = '👤';
 
@@ -95,6 +97,11 @@ const MainTabNavigator = () => {
         name="Routes" 
         component={RoutesScreen} 
         options={{ title: 'Routes & Stops' }} 
+      />
+      <Tab.Screen 
+        name="Schedules" 
+        component={SchedulesScreen} 
+        options={{ title: 'Schedules' }} 
       />
       <Tab.Screen 
         name="Notifications" 

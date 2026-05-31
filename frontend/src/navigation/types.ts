@@ -19,6 +19,7 @@ export type MainTabParamList = {
     selectedStopId?: string;
   } | undefined;
   Routes: undefined;
+  Schedules: undefined;
   Notifications: undefined;
   Profile: undefined;
 };
