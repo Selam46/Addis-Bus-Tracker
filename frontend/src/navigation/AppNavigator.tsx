@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, StyleSheet } from 'react-native';
+import { registerForPushNotificationsAsync } from '../utils/notifications';
 
 import { useAuthStore } from '../store/authStore';
 import { COLORS } from '../theme/theme';
@@ -18,6 +19,8 @@ import RoutesScreen from '../screens/RoutesScreen';
 import SchedulesScreen from '../screens/SchedulesScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import FeedbackScreen from '../screens/FeedbackScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -88,30 +91,30 @@ const MainTabNavigator = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ title: 'Live Tracker', headerShown: false }} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Live Tracker', headerShown: false }}
       />
-      <Tab.Screen 
-        name="Routes" 
-        component={RoutesScreen} 
-        options={{ title: 'Routes & Stops' }} 
+      <Tab.Screen
+        name="Routes"
+        component={RoutesScreen}
+        options={{ title: 'Routes & Stops' }}
       />
-      <Tab.Screen 
-        name="Schedules" 
-        component={SchedulesScreen} 
-        options={{ title: 'Schedules' }} 
+      <Tab.Screen
+        name="Schedules"
+        component={SchedulesScreen}
+        options={{ title: 'Schedules' }}
       />
-      <Tab.Screen 
-        name="Notifications" 
-        component={NotificationsScreen} 
-        options={{ title: 'Arrival Alerts' }} 
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Arrival Alerts' }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ title: 'My Profile' }} 
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'My Profile' }}
       />
     </Tab.Navigator>
   );
@@ -120,6 +123,12 @@ const MainTabNavigator = () => {
 // Root Navigator
 export const AppNavigator = () => {
   const { isLoading, isAuthenticated, hasCompletedOnboarding } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      registerForPushNotificationsAsync();
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return <SplashScreen />;
@@ -133,7 +142,31 @@ export const AppNavigator = () => {
         ) : !isAuthenticated ? (
           <RootStack.Screen name="Auth" component={AuthNavigator} />
         ) : (
-          <RootStack.Screen name="Main" component={MainTabNavigator} />
+          <>
+            <RootStack.Screen name="Main" component={MainTabNavigator} />
+            <RootStack.Screen 
+              name="Feedback" 
+              component={FeedbackScreen} 
+              options={{ 
+                headerShown: true, 
+                title: 'Feedback & Support',
+                headerTintColor: COLORS.primary,
+                headerStyle: { backgroundColor: COLORS.background },
+                headerShadowVisible: false,
+              }} 
+            />
+            <RootStack.Screen 
+              name="Settings" 
+              component={SettingsScreen} 
+              options={{ 
+                headerShown: true, 
+                title: 'Settings & Preferences',
+                headerTintColor: COLORS.primary,
+                headerStyle: { backgroundColor: COLORS.background },
+                headerShadowVisible: false,
+              }} 
+            />
+          </>
         )}
       </RootStack.Navigator>
     </NavigationContainer>

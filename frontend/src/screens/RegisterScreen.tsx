@@ -13,6 +13,7 @@ import ScreenContainer from '../components/ui/ScreenContainer';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
+import useTranslation from '../utils/i18n';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -47,6 +48,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export const RegisterScreen: React.FC = () => {
   const login = useAuthStore((state) => state.login);
   const navigation = useNavigation<RegisterScreenNavigationProp>();
+  const { t } = useTranslation();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -108,17 +110,14 @@ export const RegisterScreen: React.FC = () => {
           <View style={styles.iconCircle}>
             <Text style={styles.logoIcon}>🚌</Text>
           </View>
-          <Text variant="h1" style={styles.brandTitle}>
-            Addis Bus
-          </Text>
         </View>
 
         <View style={styles.formContainer}>
-          <Text variant="h2" style={styles.title}>
-            Create Account
+          <Text variant="h2" style={[styles.title, { textAlign: 'center' }]}>
+            {t('create_account')}
           </Text>
-          <Text variant="body" style={styles.subtitle}>
-            Join Addis Bus to start tracking in real-time
+          <Text variant="body" style={[styles.subtitle, { textAlign: 'center' }]}>
+            {t('join_desc')}
           </Text>
 
           {/* Error Banner */}
@@ -136,8 +135,7 @@ export const RegisterScreen: React.FC = () => {
             name="name"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Full Name"
-                placeholder="Abebe Kebede"
+                placeholder={t('full_name')}
                 autoCapitalize="words"
                 value={value}
                 onChangeText={onChange}
@@ -154,8 +152,7 @@ export const RegisterScreen: React.FC = () => {
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Email Address"
-                placeholder="example@gmail.com"
+                placeholder={t('email_address')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -174,8 +171,7 @@ export const RegisterScreen: React.FC = () => {
             name="phone"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Phone Number (Optional)"
-                placeholder="+251911234567"
+                placeholder={t('phone_number')}
                 keyboardType="phone-pad"
                 autoCapitalize="none"
                 value={value}
@@ -193,8 +189,7 @@ export const RegisterScreen: React.FC = () => {
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Password"
-                placeholder="••••••••"
+                placeholder={t('password')}
                 isPassword
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -213,8 +208,7 @@ export const RegisterScreen: React.FC = () => {
             name="confirmPassword"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Confirm Password"
-                placeholder="••••••••"
+                placeholder={t('confirm_password')}
                 isPassword
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -229,7 +223,7 @@ export const RegisterScreen: React.FC = () => {
 
           {/* Create Account Button */}
           <Button
-            title="Create Account"
+            title={t('create_acc_btn')}
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             style={styles.registerBtn}
@@ -242,9 +236,9 @@ export const RegisterScreen: React.FC = () => {
             activeOpacity={0.6}
           >
             <Text variant="body" color={COLORS.textMuted}>
-              Already have an account?{' '}
+              {t('have_account')}{' '}
               <Text variant="bodySemibold" color={COLORS.primary}>
-                Sign In
+                {t('signin_btn')}
               </Text>
             </Text>
           </TouchableOpacity>

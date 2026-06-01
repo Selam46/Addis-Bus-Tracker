@@ -40,6 +40,16 @@ export const authApi = {
     const response = await apiClient.post<AuthSuccessResponse>('/auth/register', params);
     return response.data;
   },
+
+  updatePushToken: async (pushToken: string | null): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.put('/auth/push-token', { pushToken });
+    return response.data;
+  },
+
+  updateProfile: async (params: { name?: string; phone?: string }): Promise<{ success: boolean; message: string; data: { user: UserResponseData } }> => {
+    const response = await apiClient.put('/auth/profile', params);
+    return response.data;
+  },
 };
 
 export default authApi;

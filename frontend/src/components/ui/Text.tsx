@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text as RNText, StyleSheet, TextProps } from 'react-native';
 import { COLORS, TYPOGRAPHY } from '../../theme/theme';
+import usePreferenceStore from '../../store/preferenceStore';
 
 interface CustomTextProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySemibold' | 'caption' | 'button';
@@ -10,16 +11,21 @@ interface CustomTextProps extends TextProps {
 export const Text: React.FC<CustomTextProps> = ({
   children,
   variant = 'body',
-  color = COLORS.text,
+  color,
   style,
   ...props
 }) => {
+  // Subscribe to preferenceStore to reactively catch theme changes
+  const themeMode = usePreferenceStore(state => state.theme);
+  
+  const activeColor = color || (variant === 'caption' ? COLORS.textMuted : COLORS.text);
+
   return (
     <RNText
       style={[
         styles.base,
         styles[variant],
-        { color },
+        { color: activeColor },
         style,
       ]}
       {...props}

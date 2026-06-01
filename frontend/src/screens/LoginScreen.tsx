@@ -13,6 +13,7 @@ import ScreenContainer from '../components/ui/ScreenContainer';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
+import useTranslation from '../utils/i18n';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -29,6 +30,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export const LoginScreen: React.FC = () => {
   const login = useAuthStore((state) => state.login);
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { t } = useTranslation();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -84,20 +86,14 @@ export const LoginScreen: React.FC = () => {
           <View style={styles.iconCircle}>
             <Text style={styles.logoIcon}>🚌</Text>
           </View>
-          <Text variant="h1" style={styles.brandTitle}>
-            Addis Bus
-          </Text>
-          <Text variant="body" style={styles.brandSubtitle}>
-            Track. Ride. Arrive.
-          </Text>
         </View>
 
         <View style={styles.formContainer}>
-          <Text variant="h2" style={styles.title}>
-            Welcome Back
+          <Text variant="h2" style={[styles.title, { textAlign: 'center' }]}>
+            {t('welcome_back')}
           </Text>
-          <Text variant="body" style={styles.subtitle}>
-            Sign in to track your bus in real-time
+          <Text variant="body" style={[styles.subtitle, { textAlign: 'center' }]}>
+            {t('signin_desc')}
           </Text>
 
           {/* Error Banner */}
@@ -115,8 +111,7 @@ export const LoginScreen: React.FC = () => {
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Email Address"
-                placeholder="example@gmail.com"
+                placeholder={t('email_address')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -135,8 +130,7 @@ export const LoginScreen: React.FC = () => {
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Password"
-                placeholder="••••••••"
+                placeholder={t('password')}
                 isPassword
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -151,7 +145,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* Login Button */}
           <Button
-            title="Sign In"
+            title={t('signin_btn')}
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             style={styles.loginBtn}
@@ -164,9 +158,9 @@ export const LoginScreen: React.FC = () => {
             activeOpacity={0.6}
           >
             <Text variant="body" color={COLORS.textMuted}>
-              Don't have an account?{' '}
+              {t('no_account')}{' '}
               <Text variant="bodySemibold" color={COLORS.primary}>
-                Sign Up
+                {t('signup_btn')}
               </Text>
             </Text>
           </TouchableOpacity>
