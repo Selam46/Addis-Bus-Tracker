@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   Dimensions,
   SafeAreaView,
   Alert,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -24,6 +25,39 @@ import { MainTabParamList } from '../navigation/types';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type NavigationProp = BottomTabNavigationProp<MainTabParamList, 'Routes'>;
+
+/* ─── Animated Skeleton Card ─── */
+const RoutesSkeletonCard: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.4,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim, delay]);
+
+  return (
+    <Animated.View style={[styles.skeletonCard, { opacity: pulseAnim }]}>
+      <View style={styles.skeletonBadge} />
+      <View style={styles.skeletonTitle} />
+      <View style={styles.skeletonText} />
+    </Animated.View>
+  );
+};
 
 export const RoutesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -151,15 +185,11 @@ export const RoutesScreen: React.FC = () => {
     });
   };
 
-  // Loading Skeletons
+  // Loading Skeletons — animated pulsing cards
   const renderSkeletons = () => (
     <View style={styles.skeletonContainer}>
-      {[1, 2, 3, 4].map((i) => (
-        <View key={i} style={styles.skeletonCard}>
-          <View style={styles.skeletonBadge} />
-          <View style={styles.skeletonTitle} />
-          <View style={styles.skeletonText} />
-        </View>
+      {[0, 1, 2, 3].map((i) => (
+        <RoutesSkeletonCard key={i} delay={i * 120} />
       ))}
     </View>
   );

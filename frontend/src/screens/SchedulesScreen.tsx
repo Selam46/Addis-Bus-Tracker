@@ -16,6 +16,8 @@ import {
 import { COLORS, SPACING, ROUNDNESS, SHADOWS } from '../theme/theme';
 import Text from '../components/ui/Text';
 import Button from '../components/ui/Button';
+import useTranslation from '../utils/i18n';
+import usePreferenceStore from '../store/preferenceStore';
 import routesApi, { Route } from '../api/routes';
 import schedulesApi, {
   DayOfWeek,
@@ -182,6 +184,9 @@ const skeletonStyles = StyleSheet.create({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export const SchedulesScreen: React.FC = () => {
+  const { t } = useTranslation();
+  const themeMode = usePreferenceStore(state => state.theme);
+  
   // Route picker state
   const [allRoutes, setAllRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
@@ -346,13 +351,13 @@ export const SchedulesScreen: React.FC = () => {
     <View style={styles.placeholderContainer}>
       <Text style={styles.placeholderIcon}>🚍</Text>
       <Text variant="h3" style={styles.placeholderTitle}>
-        Select a Route
+        {t('select_station')}
       </Text>
       <Text variant="body" color={COLORS.textMuted} style={styles.placeholderText}>
-        Choose a bus route to view its full daily timetable and calculate arrival times at any stop.
+        {t('working_hours')}
       </Text>
       <Button
-        title="Browse Routes"
+        title={t('routes')}
         onPress={() => setRoutePickerVisible(true)}
         style={styles.browseBtn}
       />
@@ -437,23 +442,12 @@ export const SchedulesScreen: React.FC = () => {
           {/* Next departure banner */}
           {timetable.nextDeparture ? (
             <View style={[styles.nextDepartureBanner, { backgroundColor: routeColor }]}>
-              <View style={styles.nextDepartureLeft}>
-                <Text variant="caption" color="rgba(255,255,255,0.75)">
-                  Next departure
+              <View style={{ flex: 1 }}>
+                <Text variant="caption" color="rgba(255,255,255,0.85)">
+                  Next Departure
                 </Text>
-                <Text style={styles.nextDepartureTime}>
-                  {timetable.nextDeparture.departureTime}
-                </Text>
-              </View>
-              <View style={styles.nextDepartureRight}>
-                <Text variant="caption" color="rgba(255,255,255,0.75)">
-                  in
-                </Text>
-                <Text style={styles.nextDepartureMinutes}>
-                  {timetable.nextDeparture.minutesFromNow}
-                </Text>
-                <Text variant="caption" color="rgba(255,255,255,0.75)">
-                  min
+                <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.white, marginTop: 2 }}>
+                  {timetable.nextDeparture.departureTime} (in {timetable.nextDeparture.minutesFromNow} mins)
                 </Text>
               </View>
               <TouchableOpacity
@@ -461,7 +455,7 @@ export const SchedulesScreen: React.FC = () => {
                 onPress={() => setEtaModalVisible(true)}
                 activeOpacity={0.85}
               >
-                <Text style={styles.etaQuickBtnText}>📍 My ETA</Text>
+                <Text style={styles.etaQuickBtnText}>📍 Check ETA</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -471,26 +465,6 @@ export const SchedulesScreen: React.FC = () => {
               </Text>
             </View>
           )}
-
-          {/* Stats row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statChip}>
-              <Text variant="caption" color={COLORS.textMuted}>Total</Text>
-              <Text variant="bodySemibold" color={COLORS.text}>{timetable.totalDepartures}</Text>
-            </View>
-            <View style={styles.statChip}>
-              <Text variant="caption" color={COLORS.textMuted}>Upcoming</Text>
-              <Text variant="bodySemibold" color={COLORS.success}>{timetable.upcomingCount}</Text>
-            </View>
-            <View style={styles.statChip}>
-              <Text variant="caption" color={COLORS.textMuted}>Current time</Text>
-              <Text variant="bodySemibold" color={COLORS.primary}>{timetable.currentTime}</Text>
-            </View>
-            <View style={styles.statChip}>
-              <Text variant="caption" color={COLORS.textMuted}>Day</Text>
-              <Text variant="bodySemibold" color={COLORS.text}>{timetable.queryDay}</Text>
-            </View>
-          </View>
 
           {/* Timetable list */}
           <FlatList

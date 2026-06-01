@@ -5,6 +5,8 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+  Feedback: { initialRoute?: 'submit' | 'history' } | undefined;
+  Settings: undefined;
 };
 
 export type AuthStackParamList = {
@@ -26,6 +28,6 @@ export type MainTabParamList = {
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootStackParamList { }
   }
 }

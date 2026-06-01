@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { COLORS } from '../../theme/theme';
 
+import usePreferenceStore from '../../store/preferenceStore';
+
 interface ScreenContainerProps {
   children: React.ReactNode;
   scrollable?: boolean;
@@ -25,8 +27,12 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   safe = true,
   style,
 }) => {
+  // Subscribe to preference store to trigger re-render on theme changes
+  const themeMode = usePreferenceStore(state => state.theme);
+
   const containerStyle = [
     styles.container,
+    { backgroundColor: COLORS.background },
     style,
   ];
 
@@ -63,7 +69,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, { backgroundColor: COLORS.background }, style]}>
       {inner}
     </View>
   );
