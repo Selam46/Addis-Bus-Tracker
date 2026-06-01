@@ -4,6 +4,5 @@ node_modules/
 dist/
 build/
 .DS_Store
-prisma/migrations/
 
 /src/generated/prisma
